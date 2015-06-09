@@ -119,11 +119,11 @@ def main():
         for c in children:
             c.wait()
 
-        if args.verbose:
-            for t in pool:
-                t.join()
+    if args.verbose:
+        for t in pool:
+            t.join()
 
-        show_output(nodes, children)
+    show_output(nodes, children)
 
             
 
