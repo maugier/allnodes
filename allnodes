@@ -74,7 +74,7 @@ def show_output(nodes, children, length=80):
     bl = 0
     buffer = ""
     for (n,r) in zip(nodes, (c.returncode for c in children)):
-        msg = n + " (" + ((r is None) and '...' or "{0: 3d}".format(r)) + ") "
+        msg = n + "[" + ((r is None) and '...' or "{0: 3d}".format(r)) + "]  "
         l = len(msg) 
         if (l + bl > length):
             print(buffer)
@@ -104,16 +104,16 @@ def main():
     children = [ run_child(n, args) for n in nodes ]
 
     if args.monitor:
-        while any(c.returncode is None for c in children):
-            sleep(1)
+        while True:
             for c in children:
-                if c.returncode is None:
-                    try:
-                        c.wait(0)
-                    except TimeoutExpired:
-                        pass
+                c.poll()
 
             show_output(nodes, children)
+
+            if all (c.returncode is not None for c in children):
+                break
+
+            sleep(1)
 
     else:
         for c in children:
