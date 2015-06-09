@@ -33,10 +33,10 @@ parser = argparse.ArgumentParser(description="Run a command over multiple SSH ho
 parser.add_argument('-v', '--verbose', help="Forward stderr and stdout to here", action='store_true')
 parser_summary = parser.add_mutually_exclusive_group(required=False)
 parser_summary.add_argument('-q', '--quiet', help="Do not show summary of exit codes", action='store_true')
-parser_summary.add_argument('-u', '--update', help="Continuously update nodes summary", action='store_true')
+parser_summary.add_argument('-m', '--monitor', help="Continuously update nodes summary", action='store_true')
 parser_ssh = parser.add_mutually_exclusive_group(required=False)
 parser_ssh.add_argument('-n', '--nossh', help="Run command locally, substituting {} for the hostname", action='store_true')
-parser_ssh.add_argument('-l', '--login', help="Change default SSH user")
+parser_ssh.add_argument('-u', '--user', help="Change default SSH user")
 parser_hostsource = parser.add_mutually_exclusive_group(required=False)
 parser_hostsource.add_argument('-f', '--hostfile', help="Read node names from a text file")
 parser_hostsource.add_argument('-c', '--cluster', help="Read node names from a cluster provider")
@@ -86,7 +86,7 @@ def main():
 
     children = [ run_child(n, args) for n in nodes ]
 
-    if args.update:
+    if args.monitor:
         while any(c.returncode is None for c in children):
             sleep(1)
             for c in children:
