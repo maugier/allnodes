@@ -4,7 +4,9 @@ import argparse
 import multiprocessing
 import os
 from subprocess import Popen, DEVNULL, PIPE, TimeoutExpired
+import sys
 from termcolor import colored
+from threading import Thread
 from time import sleep
 
 
@@ -40,6 +42,12 @@ parser_hostsource.add_argument('-f', '--hostfile', help="Read node names from a 
 parser_hostsource.add_argument('-c', '--cluster', help="Read node names from a cluster provider")
 parser.add_argument('command', nargs='+' )
 
+pool = []
+
+def decorate_output(reader, writer, label):
+    for line in reader:
+        writer.write(label + b': ' + line)
+
 def run_child(node, args):
     if args.nossh:
         command = [ (w == '{}') and node or w for w in args.command ]
@@ -47,7 +55,18 @@ def run_child(node, args):
         command = ['ssh', node] + args.command
 
     if args.verbose:
-        raise NotImplementedError("Verbose not implemented")
+        child = Popen(command, stdout=PIPE, stderr=PIPE)
+
+        outt = Thread(target=decorate_output, args=[child.stdout, sys.stdout.buffer, node.encode('ascii')])
+        pool.append(outt)
+        outt.start()
+
+        errt = Thread(target=decorate_output, args=[child.stderr, sys.stderr.buffer, node.encode('ascii')])
+        pool.append(errt)
+        errt.start()
+
+        return child
+
     else:
         return Popen(command, stdout=DEVNULL, stderr=DEVNULL)
 
@@ -99,7 +118,13 @@ def main():
     else:
         for c in children:
             c.wait()
+
+        if args.verbose:
+            for t in pool:
+                t.join()
+
         show_output(nodes, children)
+
             
 
 
